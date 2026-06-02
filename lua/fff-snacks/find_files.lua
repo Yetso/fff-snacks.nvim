@@ -96,13 +96,16 @@ M.source = {
       nil
     )
 
+    local cwd = ctx.picker:cwd()
+
     ---@type snacks.picker.finder.Item[]
     local items = {}
     for _, fff_item in ipairs(fff_result) do
       ---@type snacks.picker.finder.Item
       local item = {
         text = fff_item.name,
-        file = fff_item.path,
+        -- NOTE: snacks' file formatter parses relative path starting with "." wrong
+        file = vim.fs.joinpath(cwd, fff_item.relative_path),
         score = fff_item.total_frecency_score,
         -- HACK: in original snacks implementation status is a string of
         -- `git status --porcelain` output
