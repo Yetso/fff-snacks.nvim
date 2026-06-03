@@ -67,48 +67,33 @@ end
 M.source = {
   title = "FFFiles",
   finder = function(opts, ctx)
-    -- fff.picker_ui: initialize_picker
-    if not file_picker.is_initialized() then
-      if not file_picker.setup() then
-        vim.notify("Failed to initialize file picker", vim.log.levels.ERROR)
-        return {}
-      end
-    end
-
-    local config = conf.get()
-    local merged_config = vim.tbl_deep_extend("force", config or {}, opts or {})
-    if not merged_config then
-      return {}
-    end
-
     if opts.cwd ~= nil then
       vim.notify("The 'cwd' option is not supported in FFF", vim.log.levels.WARN)
     end
+    local cwd = vim.fn.getcwd()
 
-    local base_path = vim.uv.cwd()
-    if not base_path then
-      return {}
-    end
-
-    local current_file = utils.get_current_file(base_path)
-
+    local fff_config = conf.get()
+    local current_file = utils.get_current_file(cwd)
     local fff_result = file_picker.search_files(
       ctx.filter.search,
       current_file,
-      opts.limit or merged_config.max_results,
-      merged_config.max_threads,
+      opts.limit or fff_config.max_results,
+      fff_config.max_threads,
       nil
     )
 
     ---@type snacks.picker.finder.Item[]
     local items = {}
-    for _, fff_item in ipairs(fff_result) do
+    for idx, fff_item in ipairs(fff_result) do
       ---@type snacks.picker.finder.Item
       local item = {
-        text = fff_item.name,
-        -- NOTE: snacks' file formatter parses relative path starting with "." wrong
-        file = vim.fs.joinpath(base_path, fff_item.relative_path),
+        idx = idx,
+        cwd = cwd,
+        file = fff_item.relative_path,
+
         score = fff_item.total_frecency_score,
+        text = fff_item.name,
+
         -- HACK: in original snacks implementation status is a string of
         -- `git status --porcelain` output
         status = status_map[fff_item.git_status] and {
@@ -145,6 +130,16 @@ M.source = {
     end
     return ret
   end,
+
+  on_show = function(_)
+    -- fff.picker_ui: initialize_picker
+    if not file_picker.is_initialized() then
+      if not file_picker.setup() then
+        vim.notify("Failed to initialize file picker", vim.log.levels.ERROR)
+      end
+    end
+  end,
+
   formatters = {
     file = {
       filename_first = true,

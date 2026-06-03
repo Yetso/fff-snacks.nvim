@@ -5,6 +5,20 @@ local M = {}
 local conf = require "fff.conf"
 local file_picker = require "fff.file_picker"
 
+--- Resolve grep modes from picker opts override, fff config, or fallback defaults
+---@param picker_opts table
+---@return string[]
+local function get_grep_modes(picker_opts)
+  local fff_config = conf.get()
+  return picker_opts.grep_mode
+    or vim.tbl_get(fff_config, "grep", "modes")
+    or {
+      "plain",
+      "regex",
+      "fuzzy",
+    }
+end
+
 ---@type fff_snacks.GrepConfig
 M.source = {
   title = "FFF Live Grep",
@@ -13,44 +27,23 @@ M.source = {
 
   ---@param opts fff_snacks.GrepConfig
   finder = function(opts, ctx)
-    -- fff.picker_ui: initialize_picker
-    if not file_picker.is_initialized() then
-      if not file_picker.setup() then
-        vim.notify("Failed to initialize file picker", vim.log.levels.ERROR)
-        return {}
-      end
-    end
-
-    opts = vim.deepcopy(opts) or {}
-
-    local config = conf.get()
-    local merged_config = vim.tbl_deep_extend("force", config or {}, opts)
-    if not merged_config then
+    if ctx.filter.search == "" then
       return {}
     end
 
     if opts.cwd ~= nil then
       vim.notify("The 'cwd' option is not supported in FFF", vim.log.levels.WARN)
     end
+    local cwd = vim.fn.getcwd()
 
-    local base_path = vim.uv.cwd()
-    if not base_path then
-      return {}
-    end
-
-    if ctx.filter.search == "" then
-      return {}
-    end
-
-    opts.grep_mode = opts.grep_mode or vim.tbl_get(merged_config, "grep", "modes") or { "plain", "regex", "fuzzy" }
-
-    local grep = require "fff.grep"
-    local grep_result = grep.search(
+    local fff_config = conf.get()
+    local grep_mode = get_grep_modes(opts)
+    local grep_result = require("fff.grep").search(
       ctx.filter.search,
       0,
-      opts.limit or merged_config.max_results,
-      merged_config.grep_config,
-      opts.grep_mode[1] or "plain"
+      opts.limit or fff_config.max_results,
+      fff_config.grep,
+      grep_mode[1]
     )
 
     ---@type snacks.picker.finder.Item[]
@@ -79,7 +72,7 @@ M.source = {
       ---@type snacks.picker.finder.Item
       local item = {
         idx = idx,
-        cwd = base_path,
+        cwd = cwd,
         file = fff_item.relative_path,
         line = fff_item.line_content,
 
@@ -106,7 +99,17 @@ M.source = {
 
   ---@param picker fff_snacks.GrepPicker
   on_show = function(picker)
-    local modes = picker.opts.grep_mode or { "plain", "regex", "fuzzy" }
+    -- fff.picker_ui: initialize_picker
+    if not file_picker.is_initialized() then
+      if not file_picker.setup() then
+        vim.notify("Failed to initialize file picker", vim.log.levels.ERROR)
+        return
+      end
+    end
+
+    local modes = get_grep_modes(picker.opts)
+
+    picker.opts.grep_mode = modes
     picker.opts._is_grep_mode_plain = modes[1] == "plain"
     picker.opts._is_grep_mode_regex = modes[1] == "regex"
     picker.opts._is_grep_mode_fuzzy = modes[1] == "fuzzy"
@@ -115,15 +118,19 @@ M.source = {
   actions = {
     ---@param picker fff_snacks.GrepPicker
     cycle_grep_mode = function(picker)
-      local modes = picker.opts.grep_mode or { "plain", "regex", "fuzzy" }
+      local modes = get_grep_modes(picker.opts)
+
+      local new_modes = vim.deepcopy(modes)
       -- move the first mode to the end of the list
-      local first_mode = modes[1]
-      table.remove(modes, 1)
-      modes[#modes + 1] = first_mode
-      picker.opts.grep_mode = modes
-      picker.opts._is_grep_mode_plain = modes[1] == "plain"
-      picker.opts._is_grep_mode_regex = modes[1] == "regex"
-      picker.opts._is_grep_mode_fuzzy = modes[1] == "fuzzy"
+      local first_mode = new_modes[1]
+      table.remove(new_modes, 1)
+      new_modes[#new_modes + 1] = first_mode
+
+      picker.opts.grep_mode = new_modes
+      picker.opts._is_grep_mode_plain = new_modes[1] == "plain"
+      picker.opts._is_grep_mode_regex = new_modes[1] == "regex"
+      picker.opts._is_grep_mode_fuzzy = new_modes[1] == "fuzzy"
+
       picker:refresh()
     end,
   },
