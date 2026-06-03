@@ -29,7 +29,11 @@ M.source = {
       return {}
     end
 
-    local base_path = opts.cwd or vim.uv.cwd()
+    if opts.cwd ~= nil then
+      vim.notify("The 'cwd' option is not supported in FFF", vim.log.levels.WARN)
+    end
+
+    local base_path = vim.uv.cwd()
     if not base_path then
       return {}
     end
