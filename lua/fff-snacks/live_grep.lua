@@ -31,20 +31,12 @@ M.source = {
       return {}
     end
 
-    if opts.cwd ~= nil then
-      vim.notify("The 'cwd' option is not supported in FFF", vim.log.levels.WARN)
-    end
-    local cwd = vim.fn.getcwd()
+    local cwd = opts.cwd or vim.fn.getcwd()
 
-    local fff_config = conf.get()
-    local grep_mode = get_grep_modes(opts)
-    local grep_result = require("fff.grep").search(
-      ctx.filter.search,
-      0,
-      opts.limit or fff_config.max_results,
-      fff_config.grep,
-      grep_mode[1]
-    )
+    local grep_result = require("fff").content_search(ctx.filter.search, {
+      mode = get_grep_modes(opts)[1],
+      cwd = cwd,
+    })
 
     ---@type snacks.picker.finder.Item[]
     local items = {}

@@ -67,24 +67,20 @@ end
 M.source = {
   title = "FFFiles",
   finder = function(opts, ctx)
-    if opts.cwd ~= nil then
-      vim.notify("The 'cwd' option is not supported in FFF", vim.log.levels.WARN)
-    end
-    local cwd = vim.fn.getcwd()
+    local cwd = opts.cwd or vim.fn.getcwd()
 
     local fff_config = conf.get()
     local current_file = utils.get_current_file(cwd)
-    local fff_result = file_picker.search_files(
-      ctx.filter.search,
-      current_file,
-      opts.limit or fff_config.max_results,
-      fff_config.max_threads,
-      nil
-    )
+
+    local fff_result = require("fff").file_search(ctx.filter.search, {
+      max_results = opts.limit or fff_config.max_results,
+      current_file = current_file,
+      cwd = cwd,
+    })
 
     ---@type snacks.picker.finder.Item[]
     local items = {}
-    for idx, fff_item in ipairs(fff_result) do
+    for idx, fff_item in ipairs(fff_result.items) do
       ---@type snacks.picker.finder.Item
       local item = {
         idx = idx,
