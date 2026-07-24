@@ -65,6 +65,7 @@ end
 
 ---@type snacks.picker.Config
 M.source = {
+  source = "FFFiles",
   title = "FFFiles",
   finder = function(opts, ctx)
     local cwd = opts.cwd or vim.fn.getcwd()

@@ -21,6 +21,7 @@ end
 
 ---@type fff_snacks.GrepConfig
 M.source = {
+  source = "FFFgrep",
   title = "FFF Live Grep",
   format = "file",
   live = true,
