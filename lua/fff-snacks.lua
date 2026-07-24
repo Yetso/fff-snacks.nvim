@@ -18,35 +18,27 @@ local config = require "fff-snacks.config"
 local M = {}
 
 M.sources = {
-  find_files = require("fff-snacks.find_files").source,
-  live_grep = require("fff-snacks.live_grep").source,
+  FFFfiles = require("fff-snacks.find_files").opts,
+  FFFgrep = require("fff-snacks.live_grep").opts,
 }
 
----Setup fff-snacks with default options
 ---@param opts? fff_snacks.Config
 function M.setup(opts)
   config.setup(opts)
+  require("snacks").config.picker.sources.FFFfiles = config.get_config().FFFfiles
+  require("snacks").config.picker.sources.FFFgrep = config.get_config().FFFgrep
 end
 
----@param opts? snacks.picker.Config
 function M.find_files(opts)
-  Snacks.picker.pick(config.make_opts("find_files", opts))
+  opts = opts or {}
+  opts.source = "FFFfiles"
+  Snacks.picker.pick(opts)
 end
 
----@param opts? fff_snacks.GrepConfig
 function M.live_grep(opts)
-  Snacks.picker.pick(config.make_opts("live_grep", opts))
-end
-
----@param opts? fff_snacks.GrepConfig
-function M.grep_word(opts)
-  local picker_opts = config.make_opts("grep_word", opts)
-  picker_opts = vim.tbl_deep_extend("force", picker_opts or {}, {
-    search = function(picker)
-      return picker:word()
-    end,
-  })
-  Snacks.picker.pick(picker_opts)
+  opts = opts or {}
+  opts.source = "FFFgrep"
+  Snacks.picker.pick(opts)
 end
 
 return M

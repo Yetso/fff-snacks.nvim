@@ -20,7 +20,7 @@ local function get_grep_modes(picker_opts)
 end
 
 ---@type fff_snacks.GrepConfig
-M.source = {
+M.opts = {
   source = "FFFgrep",
   title = "FFF Live Grep",
   format = "file",

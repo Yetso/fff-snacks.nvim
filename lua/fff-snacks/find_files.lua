@@ -64,9 +64,9 @@ local function format_file_git_status(item, picker)
 end
 
 ---@type snacks.picker.Config
-M.source = {
-  source = "FFFiles",
-  title = "FFFiles",
+M.opts = {
+  source = "FFFfiles",
+  title = "FFFfiles",
   finder = function(opts, ctx)
     local cwd = opts.cwd or vim.fn.getcwd()
 
