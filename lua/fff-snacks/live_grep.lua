@@ -38,7 +38,7 @@ end
 local last_cursor = 1
 
 ---@type fff_snacks.GrepConfig
-M.source = {
+M.opts = {
   source = "FFFgrep",
   title = "FFF Live Grep",
   live = true,
@@ -54,7 +54,7 @@ M.source = {
     local grep_result = require("fff").content_search(ctx.filter.search, {
       mode = get_grep_modes(opts)[1],
       cwd = cwd,
-      classify_definitions = opts.classify_definitions,
+      classify_definitions = opts.classify_definitions or false,
     })
 
     -- custom snacks decor item
