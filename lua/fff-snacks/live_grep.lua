@@ -39,6 +39,7 @@ local last_cursor = 1
 
 ---@type fff_snacks.GrepConfig
 M.source = {
+  source = "FFFgrep",
   title = "FFF Live Grep",
   live = true,
 
