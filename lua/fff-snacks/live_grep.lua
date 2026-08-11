@@ -115,8 +115,7 @@ M.opts = {
 
       local new_modes = vim.deepcopy(modes)
       -- move the first mode to the end of the list
-      local first_mode = new_modes[1]
-      table.remove(new_modes, 1)
+      local first_mode = table.remove(new_modes, 1)
       new_modes[#new_modes + 1] = first_mode
 
       picker.opts.grep_mode = new_modes
