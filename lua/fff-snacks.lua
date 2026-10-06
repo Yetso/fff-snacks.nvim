@@ -9,6 +9,7 @@
 ---@field _is_grep_mode_plain? boolean
 ---@field _is_grep_mode_regex? boolean
 ---@field _is_grep_mode_fuzzy? boolean
+---@field page_size? integer
 
 ---@class fff_snacks.GrepPicker: snacks.Picker
 ---@field opts fff_snacks.GrepConfig

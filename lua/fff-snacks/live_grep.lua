@@ -37,6 +37,7 @@ M.opts = {
     local grep_result = require("fff").content_search(ctx.filter.search, {
       mode = get_grep_modes(opts)[1],
       cwd = cwd,
+      page_size = opts.page_size or 50,
     })
 
     ---@type snacks.picker.finder.Item[]
