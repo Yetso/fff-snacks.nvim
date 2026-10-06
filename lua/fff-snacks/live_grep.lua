@@ -55,6 +55,7 @@ M.opts = {
       mode = get_grep_modes(opts)[1],
       cwd = cwd,
       classify_definitions = opts.classify_definitions or false,
+      page_size = opts.page_size or 50,
     })
 
     -- custom snacks decor item
