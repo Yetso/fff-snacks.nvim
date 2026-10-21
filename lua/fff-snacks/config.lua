@@ -7,8 +7,8 @@ local M = {}
 
 ---@type fff_snacks.Config
 local config = {
-  find_files = nil,
-  live_grep = nil,
+  find_files = {},
+  live_grep = { classify_definitions = true },
   grep_word = nil,
 }
 
@@ -23,9 +23,11 @@ function M.setup(opts)
   if not opts then
     return
   end
-  config.find_files = opts.find_files
-  config.live_grep = opts.live_grep
-  config.grep_word = opts.grep_word
+  config.find_files = vim.tbl_deep_extend("force", config.find_files, opts.find_files)
+  config.live_grep = vim.tbl_deep_extend("force", config.live_grep, opts.live_grep)
+  -- grep word should have the same defaults as live_grep, allow it to be nil
+  config.grep_word = opts.grep_word and vim.tbl_deep_extend("force", config.live_grep, opts.grep_word)
+    or vim.deepcopy(config.live_grep)
 end
 
 ---@return fff_snacks.Config
@@ -40,11 +42,6 @@ function M.make_opts(func_type, runtime_opts)
   runtime_opts = runtime_opts or {}
   local defaults = config[func_type]
   local source = sources[func_type] or sources.live_grep
-
-  -- grep_word falls back to live_grep if not explicitly set
-  if func_type == "grep_word" and defaults == nil then
-    defaults = config.live_grep
-  end
 
   -- Merge: source + defaults + runtime_opts
   return vim.tbl_deep_extend("force", source, defaults or {}, runtime_opts)

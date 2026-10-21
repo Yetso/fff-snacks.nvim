@@ -5,6 +5,21 @@ local M = {}
 local conf = require "fff.conf"
 local file_picker = require "fff.file_picker"
 
+---@param it snacks.picker.Item?
+local function is_decor(it)
+  return it and it.decor ~= nil
+end
+
+--- override `List:format` so decor items won't get matched against query and change color
+local List = require "snacks.picker.core.list"
+local orig = List.format
+function List:format(item)
+  if item.decor then
+    return Snacks.picker.highlight.to_text(item.decor)
+  end
+  return orig(self, item)
+end
+
 --- Resolve grep modes from picker opts override, fff config, or fallback defaults
 ---@param picker_opts table
 ---@return string[]
@@ -19,10 +34,12 @@ local function get_grep_modes(picker_opts)
     }
 end
 
+-- for on_change step over decor items
+local last_cursor = 1
+
 ---@type fff_snacks.GrepConfig
 M.source = {
   title = "FFF Live Grep",
-  format = "file",
   live = true,
 
   ---@param opts fff_snacks.GrepConfig
@@ -36,7 +53,22 @@ M.source = {
     local grep_result = require("fff").content_search(ctx.filter.search, {
       mode = get_grep_modes(opts)[1],
       cwd = cwd,
+      classify_definitions = opts.classify_definitions,
     })
+
+    -- custom snacks decor item
+    ---@type snacks.picker.finder.Item
+    local definition_separator_item = {
+      text = "",
+      decor = {
+        { "──", "SnacksPickerBorder" },
+        { " ↑ Definitions ", "Debug" },
+        {
+          string.rep("─", 200),
+          "SnacksPickerBorder",
+        },
+      },
+    }
 
     ---@type snacks.picker.finder.Item[]
     local items = {}
@@ -76,10 +108,44 @@ M.source = {
         text = ("%s:%d:%d:%s"):format(fff_item.relative_path, pos[1], pos[2], fff_item.line_content),
       }
 
+      -- add a separator when the previous one is definition, but this one isn't
+      -- it seems that the definition items are always returned first
+      if not fff_item.is_definition and idx > 1 and grep_result.items[idx - 1].is_definition then
+        items[#items + 1] = definition_separator_item
+      end
+
       items[#items + 1] = item
     end
 
     return items
+  end,
+
+  -- intercept format and preview handling for decor items
+  format = function(item, picker)
+    if is_decor(item) then
+      return item.decor
+    end
+    return Snacks.picker.format.file(item, picker)
+  end,
+  preview = function(ctx)
+    if is_decor(ctx.item) then
+      return ctx.preview:reset()
+    end
+    return Snacks.picker.preview.file(ctx)
+  end,
+
+  -- move the cursor past decor items, in the direction it was moving
+  on_change = function(picker, item)
+    local list = picker.list
+    if is_decor(item) then
+      local dir = list.cursor >= last_cursor and 1 or -1
+      local to = list.cursor + dir
+      if to < 1 or to > list:count() then
+        dir = -dir
+      end
+      return list:_move(dir) -- this triggers on_change again, so runs of decor items are skipped too
+    end
+    last_cursor = list.cursor
   end,
 
   toggles = {
@@ -124,6 +190,25 @@ M.source = {
       picker.opts._is_grep_mode_fuzzy = new_modes[1] == "fuzzy"
 
       picker:refresh()
+    end,
+
+    --- ignore decor items for common builtin actions
+    confirm = function(picker, item, action)
+      if is_decor(item) then
+        return
+      end
+      return Snacks.picker.actions.jump(picker, item, action)
+    end,
+    select_and_next = function(picker)
+      if not is_decor(picker:current()) then
+        picker.list:select()
+      end
+      picker.list:_move(vim.v.count1)
+    end,
+    select_all = function(picker)
+      picker.list:set_selected(vim.tbl_filter(function(i)
+        return not is_decor(i)
+      end, picker.list.items))
     end,
   },
 

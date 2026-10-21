@@ -6,6 +6,7 @@
 
 ---@class fff_snacks.GrepConfig: snacks.picker.Config
 ---@field grep_mode? fff_snacks.GrepMode[]
+---@field classify_definitions? boolean
 ---@field _is_grep_mode_plain? boolean
 ---@field _is_grep_mode_regex? boolean
 ---@field _is_grep_mode_fuzzy? boolean

@@ -21,7 +21,10 @@ vim.api.nvim_create_user_command("FFFSnacks", function(args)
       end,
     }))
   else
-    vim.notify("fff-snacks: Invalid argument. Use 'find_files', 'live_grep', 'fuzzy', or 'grep_word'", vim.log.levels.ERROR)
+    vim.notify(
+      "fff-snacks: Invalid argument. Use 'find_files', 'live_grep', 'fuzzy', or 'grep_word'",
+      vim.log.levels.ERROR
+    )
   end
 end, {
   nargs = "?",
